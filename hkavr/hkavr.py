@@ -62,6 +62,8 @@ class HkAVR:
 
         self._state = None
         self._power = None
+        self._sources = DEFAULT_SOURCES
+
         self._socket = self._get_new_socket()
 
         self.update()
@@ -144,11 +146,12 @@ class HkAVR:
 
         return True
 
-    def _get_receiver_sources(self):
+    @property
+    def sources(self):
         """
         Get sources list.
         """
-        return DEFAULT_SOURCES
+        return self._sources
 
     @property
     def zone(self):
