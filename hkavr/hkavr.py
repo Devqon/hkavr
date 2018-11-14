@@ -117,17 +117,13 @@ class HkAVR:
                 self._socket.close()
                 self._socket = None
                 _LOGGER.warning("Send fail, disconnecting from AVR")
-                return False
-            return True
         except (BrokenPipeError, ConnectionError) as connect_error:
             _LOGGER.warning("Connection error, retrying. %s", connect_error)
             self._socket = None
             self._socket = self._get_new_socket()
             if self._socket is not None:
                 # retrying after broken pipe error
-                resp = self._socket.sendto(command.encode(), (self._host, self._port))
-
-                return resp != 0
+                self._socket.sendto(command.encode(), (self._host, self._port))
 
     def send_command(self, command, param=''):
         comm = COMMAND_MAPPING[command]
@@ -137,14 +133,7 @@ class HkAVR:
         """
         Get the latest status information from device.
         """
-        if (self.send_command("HEARTBEAT")):
-            self._power = POWER_ON
-            self._state = STATE_ON
-        else:
-            self._power = POWER_OFF
-            self._state = STATE_OFF
-
-        return True
+        return self._socket is not None
 
     @property
     def sources(self):
@@ -201,12 +190,10 @@ class HkAVR:
     def power_on(self):
         """Turn off receiver via command."""
         try:
-            if self.send_command("POWER_ON"):
-                self._power = POWER_ON
-                self._state = STATE_ON
-                return True
-            else:
-                return False
+            self.send_command("POWER_ON")
+            self._power = POWER_ON
+            self._state = STATE_ON
+            return True
         except requests.exceptions.RequestException:
             _LOGGER.error("Connection error: power on command not sent.")
             return False
@@ -214,12 +201,10 @@ class HkAVR:
     def power_off(self):
         """Turn off receiver"""
         try:
-            if self.send_command("POWER_OFF"):
-                self._power = POWER_OFF
-                self._state = STATE_OFF
-                return True
-            else:
-                return False
+            self.send_command("POWER_OFF")
+            self._power = POWER_OFF
+            self._state = STATE_OFF
+            return True
         except requests.exceptions.RequestException:
             _LOGGER.error("Connection error: power off command not sent.")
             return False
@@ -227,10 +212,8 @@ class HkAVR:
     def sleep(self):
         """Sleep"""
         try:
-            if self.send_command("SLEEP"):
-                return True
-            else:
-                return False
+            self.send_command("SLEEP")
+            return True
         except requests.exceptions.RequestException:
             _LOGGER.error("Connection error: sleep command not sent.")
             return False
@@ -238,7 +221,8 @@ class HkAVR:
     def volume_up(self):
         """Volume up receiver"""
         try:
-            return bool(self.send_command("VOLUME_UP"))
+            self.send_command("VOLUME_UP")
+            return True
         except requests.exceptions.RequestException:
             _LOGGER.error("Connection error: volume up command not sent.")
             return False
@@ -246,7 +230,8 @@ class HkAVR:
     def volume_down(self):
         """Volume down receiver"""
         try:
-            return bool(self.send_command("VOLUME_DOWN"))
+            self.send_command("VOLUME_DOWN")
+            return True
         except requests.exceptions.RequestException:
             _LOGGER.error("Connection error: volume down command not sent.")
             return False
@@ -257,7 +242,8 @@ class HkAVR:
 
     def select_source(self, source):
         try:
-            return bool(self.send_command("SOURCE", source))
+            self.send_command("SOURCE", source)
+            return True
         except requests.exceptions.RequestException:
             _LOGGER.error("Connection error: select source command not sent.")
             return False
@@ -266,17 +252,13 @@ class HkAVR:
         """Mute receiver"""
         try:
             if (mute and self._mute == STATE_OFF):
-                if self.send_command("MUTE"):
-                    self._mute = STATE_ON
-                    return True
-                else:
-                    return False
+                self.send_command("MUTE_TOGGLE")
+                self._mute = STATE_ON
+                return True
             elif not mute and self._mute == STATE_ON:
-                if self.send_command("MUTE"):
-                    self._mute = STATE_OFF
-                    return True
-                else:
-                    return False
+                self.send_command("MUTE_TOGGLE")
+                self._mute = STATE_OFF
+                return True
         except requests.exceptions.RequestException:
             _LOGGER.error("Connection error: mute command not sent.")
             return False
