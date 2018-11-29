@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="hkavr",
-    version="0.0.3",
+    version="0.0.5",
     author="Sander Geerts",
     author_email="s.geerts@live.nl",
     description="Library for controlling a Harman Kardon AVR",

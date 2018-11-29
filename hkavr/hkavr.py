@@ -14,7 +14,7 @@ import requests
 _LOGGER = logging.getLogger("HkAVR")
 
 DEFAULT_SOURCES = ["Disc", "STB", "Cable Sat", "Media Server", "DVR", "Radio", "TV", "USB", "Game",
-            "Home Network", "AUX"]
+                   "Home Network", "AUX"]
 
 COMMAND_MAPPING = {
     "POWER_OFF": "power-off",
@@ -62,11 +62,10 @@ class HkAVR:
 
         self._state = None
         self._power = None
+        self._current_source = None
         self._sources = DEFAULT_SOURCES
 
         self._socket = self._get_new_socket()
-
-        self.update()
 
     def _get_new_socket(self):
         try:
@@ -129,18 +128,19 @@ class HkAVR:
         comm = COMMAND_MAPPING[command]
         return self._exec_appcommand_post(comm, param)
 
-    def update(self):
-        """
-        Get the latest status information from device.
-        """
-        return self._socket is not None
-
     @property
     def sources(self):
         """
         Get sources list.
         """
         return self._sources
+
+    @property
+    def current_source(self):
+        """
+        Get the current source.
+        """
+        return self._current_source
 
     @property
     def zone(self):
@@ -186,6 +186,12 @@ class HkAVR:
     def port(self):
         """Return the receiver's port."""
         return self._port
+
+    def is_on(self):
+        return self._state == STATE_ON
+
+    def is_off(self):
+        return self._state == STATE_OFF
 
     def power_on(self):
         """Turn off receiver via command."""
@@ -243,6 +249,7 @@ class HkAVR:
     def select_source(self, source):
         try:
             self.send_command("SOURCE", source)
+            self._current_source = source
             return True
         except requests.exceptions.RequestException:
             _LOGGER.error("Connection error: select source command not sent.")
